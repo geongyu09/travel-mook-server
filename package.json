@@ -1,5 +1,26 @@
 {
+  "name": "socket-mock",
+  "version": "1.0.0",
+  "description": "Socket mock server for development",
+  "main": "src/index.ts",
+  "scripts": {
+    "start": "node dist/index.js",
+    "dev": "nodemon --exec ts-node src/index.ts",
+    "dev:old": "ts-node src/index.ts",
+    "build": "tsc"
+  },
   "dependencies": {
-    "express": "^5.1.0"
+    "express": "^5.1.0",
+    "jsonwebtoken": "^9.0.2",
+    "ws": "^8.18.0"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.21",
+    "@types/jsonwebtoken": "^9.0.5",
+    "@types/node": "^20.0.0",
+    "@types/ws": "^8.5.10",
+    "nodemon": "^3.0.0",
+    "typescript": "^5.0.0",
+    "ts-node": "^10.0.0"
   }
 }

@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(mkdir:*)",
+      "Bash(openssl req:*)",
+      "Bash(npm install)",
+      "Bash(curl:*)",
+      "Bash(npm run dev:*)",
+      "Bash(pkill:*)",
+      "Bash(lsof:*)"
+    ],
+    "deny": []
+  }
+}
