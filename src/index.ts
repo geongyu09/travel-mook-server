@@ -161,19 +161,19 @@ const createWebSocketHandler = (wss: any, endpointName: string, requiresCourseId
 
         case 'start': {
           if (!isAuthenticated) {
-            sendMessage(ws, 'error', { event: 'error', message: 'Authentication required' })
+            sendMessage(ws, 'error', { event: 'error', message: 'Authentication required', status: 'error' })
             return
           }
 
           // courseId 검증 (travel-navigate 엔드포인트에서만 필요)
           if (requiresCourseId && !data.courseId) {
-            sendMessage(ws, 'error', { event: 'error', message: 'courseId is required for travel-navigate endpoint' })
+            sendMessage(ws, 'error', { event: 'error', message: 'courseId is required for travel-navigate endpoint', status: 'error' })
             return
           }
 
           const startSession = userSessions.get(userId)
           if (!startSession) {
-            sendMessage(ws, 'error', { event: 'error', message: 'Session not found' })
+            sendMessage(ws, 'error', { event: 'error', message: 'Session not found', status: 'error' })
             return
           }
 
@@ -202,7 +202,9 @@ const createWebSocketHandler = (wss: any, endpointName: string, requiresCourseId
               index: 0,
               isArrived: false,
               isDeviation: false,
-              travelDistance: 0
+              travelDistance: 0,
+              remainTimeToStopover: Math.floor(Math.random() * 20000) + 10000,
+              remainTimeToEnd: Math.floor(Math.random() * 40000) + 20000
             },
             status: 'success'
           }
@@ -214,19 +216,19 @@ const createWebSocketHandler = (wss: any, endpointName: string, requiresCourseId
 
         case 'current-position': {
           if (!isAuthenticated) {
-            sendMessage(ws, 'error', { event: 'error', message: 'Authentication required' })
+            sendMessage(ws, 'error', { event: 'error', message: 'Authentication required', status: 'error' })
             return
           }
 
           // courseId 검증 (travel-navigate 엔드포인트에서만 필요)
           if (requiresCourseId && !data.courseId) {
-            sendMessage(ws, 'error', { event: 'error', message: 'courseId is required for travel-navigate endpoint' })
+            sendMessage(ws, 'error', { event: 'error', message: 'courseId is required for travel-navigate endpoint', status: 'error' })
             return
           }
 
           const userSession = userSessions.get(userId)
           if (!userSession?.isStarted) {
-            sendMessage(ws, 'error', { event: 'error', message: 'Start hiking first' })
+            sendMessage(ws, 'error', { event: 'error', message: 'Start hiking first', status: 'error' })
             return
           }
 
@@ -256,7 +258,9 @@ const createWebSocketHandler = (wss: any, endpointName: string, requiresCourseId
                 index: newIndex,
                 isArrived: isCompleted,
                 isDeviation: !isCompleted && Math.random() > 0.9,
-                travelDistance: Math.round(userSession.travelDistance * 10) / 10
+                travelDistance: Math.round(userSession.travelDistance * 10) / 10,
+                remainTimeToStopover: isCompleted ? 0 : Math.floor(Math.random() * 15000) + 5000,
+                remainTimeToEnd: isCompleted ? 0 : Math.floor(Math.random() * 30000) + 10000
               },
               status: 'success'
             }
@@ -274,7 +278,7 @@ const createWebSocketHandler = (wss: any, endpointName: string, requiresCourseId
 
         case 'pause': {
           if (!isAuthenticated) {
-            sendMessage(ws, 'error', { event: 'error', message: 'Authentication required' })
+            sendMessage(ws, 'error', { event: 'error', message: 'Authentication required', status: 'error' })
             return
           }
 
@@ -292,7 +296,9 @@ const createWebSocketHandler = (wss: any, endpointName: string, requiresCourseId
                 index: pauseSession.currentIndex,
                 isArrived: false,
                 isDeviation: false,
-                travelDistance: Math.round(pauseSession.travelDistance * 10) / 10
+                travelDistance: Math.round(pauseSession.travelDistance * 10) / 10,
+                remainTimeToStopover: Math.floor(Math.random() * 15000) + 5000,
+                remainTimeToEnd: Math.floor(Math.random() * 30000) + 10000
               },
               status: 'success'
             })
@@ -302,7 +308,7 @@ const createWebSocketHandler = (wss: any, endpointName: string, requiresCourseId
 
         case 'restart': {
           if (!isAuthenticated) {
-            sendMessage(ws, 'error', { event: 'error', message: 'Authentication required' })
+            sendMessage(ws, 'error', { event: 'error', message: 'Authentication required', status: 'error' })
             return
           }
 
@@ -319,7 +325,9 @@ const createWebSocketHandler = (wss: any, endpointName: string, requiresCourseId
                 index: restartSession.currentIndex,
                 isArrived: false,
                 isDeviation: false,
-                travelDistance: Math.round(restartSession.travelDistance * 10) / 10
+                travelDistance: Math.round(restartSession.travelDistance * 10) / 10,
+                remainTimeToStopover: Math.floor(Math.random() * 15000) + 5000,
+                remainTimeToEnd: Math.floor(Math.random() * 30000) + 10000
               },
               status: 'success'
             }
@@ -338,25 +346,27 @@ const createWebSocketHandler = (wss: any, endpointName: string, requiresCourseId
 
         case 'end': {
           if (!isAuthenticated) {
-            sendMessage(ws, 'error', { event: 'error', message: 'Authentication required' })
+            sendMessage(ws, 'error', { event: 'error', message: 'Authentication required', status: 'error' })
             return
           }
 
           const endSession = userSessions.get(userId)
           if (endSession) {
-            const { coordinate, time } = data
+            const { coordinate, time, totalTravelTime } = data
             endSession.isGuiding = false
             endSession.isStarted = false
             
-            console.log(`🛑 산행 종료 요청 - 사용자: ${userId}`)
+            console.log(`🛑 산행 종료 요청 - 사용자: ${userId}, 총 소요시간: ${totalTravelTime}ms`)
             
             sendMessage(ws, 'end', {
               event: 'end',
               data: {
                 index: endSession.currentIndex,
-                isArrived: false,
+                isArrived: endSession.currentIndex >= 80,
                 isDeviation: false,
-                travelDistance: Math.round(endSession.travelDistance * 10) / 10
+                travelDistance: Math.round(endSession.travelDistance * 10) / 10,
+                remainTimeToStopover: 0,
+                remainTimeToEnd: 0
               },
               status: 'success'
             })
@@ -366,12 +376,12 @@ const createWebSocketHandler = (wss: any, endpointName: string, requiresCourseId
 
         default: {
           console.log(`❓ Unknown event: ${event}`, data)
-          sendMessage(ws, 'error', { event: 'error', message: `Unknown event: ${event}` })
+          sendMessage(ws, 'error', { event: 'error', message: `Unknown event: ${event}`, status: 'error' })
         }
       }
     } catch (error) {
       console.log('🚨 Message parse error:', error)
-      sendMessage(ws, 'error', { event: 'error', message: 'Invalid message format' })
+      sendMessage(ws, 'error', { event: 'error', message: 'Invalid message format', status: 'error' })
     }
   })
 
